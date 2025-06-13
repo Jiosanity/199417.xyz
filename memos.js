@@ -12,12 +12,12 @@ var memosDom = document.querySelector(memosData.dom);
 let memoList
 var memoDefaultList = [
  {
-      "creatorName" : "小十",
-      "website" : "https://www.jiaohuiming.cn",
-      "link" : "https://memos.xiaoten.com",
-      "creatorId" : "1",
-      "avatar" : "https://pix.us.kg/PicGo/20250603180653022.jpg",
-      "twikoo" : "https://twikoo.xiaoten.com"
+    "creatorName": "泥鳅胡子",
+    "website": "https://q.chyfh.com",
+    "link": "https://memos2.xiaoten.com",
+    "creatorId": "1",
+    "avatar": "https://pix.us.kg/chevereto/2025/06/09/t3ardi.webp",
+    "twikoo": "https://twikoo.xiaoten.com"
   }
 ];
 
