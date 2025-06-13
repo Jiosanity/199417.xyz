@@ -11,14 +11,7 @@ var memosDom = document.querySelector(memosData.dom);
 
 let memoList
 var memoDefaultList = [
-  {
-      "creatorName" : "泥鳅胡子",
-      "website" : "https://www.xiaoten.com",
-      "link" : "https://memos.xiaoten.com",
-      "creatorId" : "2",
-      "avatar" : "https://pix.us.kg/chevereto/2025/06/09/t3ardi.webp",
-      "twikoo" : "https://twikoo.xiaoten.com"
-  },{
+ {
       "creatorName" : "小十",
       "website" : "https://www.jiaohuiming.cn",
       "link" : "https://memos.xiaoten.com",
