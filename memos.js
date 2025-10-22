@@ -13,10 +13,10 @@ let memoList
 var memoDefaultList = [
  {
     "creatorName": "泥鳅胡子",
-    "website": "https://q.chyfh.com",
-    "link": "https://memos2.xiaoten.com",
-    "creatorId": "1",
-    "avatar": "https://pix.us.kg/chevereto/2025/06/09/t3ardi.webp",
+    "website": "https://memos.xiaoten.com/u/myh",
+    "link": "https://memos.xiaoten.com",
+    "creatorId": "4",
+    "avatar": "https://www.xiaoten.com/myh.jpg",
     "twikoo": "https://twikoo.xiaoten.com"
   }
 ];
