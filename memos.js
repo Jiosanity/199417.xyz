@@ -770,12 +770,12 @@ async function getMemos(search) {
         if (matchedV1 && item.createTime) {
           item.createdTs = Math.floor(new Date(item.createTime).getTime() / 1000);
         }
-        // 移除原有的用户信息赋值，改为在后续统一处理
-        // for (let key in matchedMemo) {
-        //   if (matchedMemo.hasOwnProperty(key)) {
-        //     item[key] = matchedMemo[key];
-        //   }
-        // }
+        // 恢复原有的用户信息赋值
+        for (let key in matchedMemo) {
+          if (matchedMemo.hasOwnProperty(key)) {
+            item[key] = matchedMemo[key];
+          }
+        }
       });
       return memosData
     }));
@@ -783,10 +783,10 @@ async function getMemos(search) {
   results = results.filter(i => i.status === 'fulfilled');
   memoData = results.flatMap(result => result.value);
 
-  // 修复：统一处理用户信息映射
+  // 修复：统一处理用户信息映射，添加安全检查
   memoList.forEach(item => {
     let userLink = item.link;
-    if (!userLink.endsWith('/')) {
+    if (userLink && !userLink.endsWith('/')) {
       userLink += '/';
     }
     const key = `${userLink}-${item.creatorId}`;
@@ -795,9 +795,17 @@ async function getMemos(search) {
 
   memoData = memoData.map(item => {
     let itemLink = item.link;
-    if (!itemLink.endsWith('/')) {
+    // 添加安全检查，确保 itemLink 存在
+    if (!itemLink) {
+      // 如果 item.link 不存在，尝试从用户信息中获取
+      let userData = memoList.find(user => user.creatorId === item.creatorId);
+      itemLink = userData ? userData.link : '';
+    }
+    
+    if (itemLink && !itemLink.endsWith('/')) {
       itemLink += '/';
     }
+    
     const key = `${itemLink}-${item.creatorId}`;
     let userData = memoCreatorMap[key];
     
@@ -815,12 +823,10 @@ async function getMemos(search) {
   setTimeout(function() {
     loadBtn.classList.remove('d-none');
   }, 1000);
-  //setTimeout(function() {
-    window.scrollTo({
-      top: usernowDom.offsetTop - 30,
-      behavior: "smooth"
-    });
-  //}, 800);
+  window.scrollTo({
+    top: usernowDom.offsetTop - 30,
+    behavior: "smooth"
+  });
   goBbsBtn.classList.remove("noclick")
 }
 
