@@ -783,22 +783,9 @@ async function getMemos(search) {
   results = results.filter(i => i.status === 'fulfilled');
   memoData = results.flatMap(result => result.value);
 
-  // 简化处理：直接使用原有的用户信息映射方式
-  memoList.forEach(item => {
-    memoCreatorMap[item.creatorName] = item;
-  });
-
-  memoData = memoData.map(item => {
-    // 如果 item 没有用户信息，尝试从 memoCreatorMap 中获取
-    if (!item.avatar || !item.website) {
-      let userData = memoCreatorMap[item.creatorName];
-      if (userData) {
-        return {...item, ...userData};
-      }
-    }
-    return item;
-  });
-
+  // 完全跳过用户信息映射，直接使用从 API 返回的数据
+  // 不进行任何额外的处理
+  
   //memoData = await getMemoCount(memoData);
   memoDom.innerHTML = "";
   this.updateData(memoData);
