@@ -783,7 +783,7 @@ async function getMemos(search) {
   results = results.filter(i => i.status === 'fulfilled');
   memoData = results.flatMap(result => result.value);
 
-  // 修复：统一处理用户信息映射，添加安全检查
+  // 修复：统一处理用户信息映射，添加更严格的安全检查
   memoList.forEach(item => {
     let userLink = item.link;
     if (userLink && !userLink.endsWith('/')) {
@@ -793,16 +793,40 @@ async function getMemos(search) {
     memoCreatorMap[key] = item;
   });
 
+  // 过滤掉无效的 memo 数据
+  memoData = memoData.filter(item => item && item.creatorId);
+  
   memoData = memoData.map(item => {
-    let itemLink = item.link;
-    // 添加安全检查，确保 itemLink 存在
-    if (!itemLink) {
-      // 如果 item.link 不存在，尝试从用户信息中获取
-      let userData = memoList.find(user => user.creatorId === item.creatorId);
-      itemLink = userData ? userData.link : '';
+    // 确保 item 存在且有 creatorId
+    if (!item || !item.creatorId) {
+      return item;
     }
     
-    if (itemLink && !itemLink.endsWith('/')) {
+    let itemLink = item.link;
+    
+    // 如果 item.link 不存在，尝试从匹配的用户信息中获取
+    if (!itemLink) {
+      // 首先尝试通过 creatorId 匹配
+      let userData = memoList.find(user => user.creatorId === item.creatorId);
+      if (userData) {
+        itemLink = userData.link;
+      } else {
+        // 如果还是找不到，尝试通过 creatorName 匹配
+        userData = memoList.find(user => user.creatorName === item.creatorName);
+        if (userData) {
+          itemLink = userData.link;
+        }
+      }
+    }
+    
+    // 如果仍然没有 link，跳过这个 item
+    if (!itemLink) {
+      console.warn('无法找到 memo 的链接:', item);
+      return item;
+    }
+    
+    // 确保 itemLink 是字符串且有值
+    if (typeof itemLink === 'string' && itemLink && !itemLink.endsWith('/')) {
       itemLink += '/';
     }
     
@@ -816,6 +840,9 @@ async function getMemos(search) {
     
     return {...item, ...userData};
   });
+
+  // 再次过滤掉无效的数据
+  memoData = memoData.filter(item => item && item.creatorId && item.link);
 
   //memoData = await getMemoCount(memoData);
   memoDom.innerHTML = "";
