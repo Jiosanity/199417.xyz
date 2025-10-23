@@ -728,9 +728,6 @@ async function getMemos(search) {
   loadBtn.classList.add("d-none");
   let results;
   
-  console.log("开始获取 memos 数据...");
-  console.log("memoList:", memoList);
-  
   if(search && search != "" && search != null ){
     results = await Promise.allSettled(memoList.map(u => {
       let uLink = u.link
@@ -738,7 +735,6 @@ async function getMemos(search) {
         uLink += '/';
       }
       const fetchUrl = `${uLink}api/v1/memo?creatorId=${u.creatorId}&content=${search}&rowStatus=NORMAL&limit=${limit}`;
-      console.log(`搜索请求: ${fetchUrl}`);
       return withTimeout(2000, fetch(fetchUrl)
         .then(response => {
           if (!response.ok) {
@@ -750,7 +746,6 @@ async function getMemos(search) {
     }));
   }else{
     results = await Promise.allSettled(memoList.map(async(u) => {
-      console.log(`处理用户: ${u.creatorName} (ID: ${u.creatorId})`);
       let matchedMemo = memoList.find(item => item.link === u.link);
       let matchedV1 = matchedMemo ? matchedMemo.v1 : undefined;
       let fetchUrl;
@@ -765,50 +760,40 @@ async function getMemos(search) {
         fetchUrl = `${uLink}api/v1/memo?creatorId=${u.creatorId}&rowStatus=NORMAL&limit=${limit}`;
       }
 
-      console.log(`请求URL: ${fetchUrl}`);
       const response = await withTimeout(2000, fetch(fetchUrl));
       if (!response.ok) {
         throw new Error(response.statusText);
       }
       const data = await response.json();
       const memosData = matchedV1 ? data.memos : data;
-      
-      console.log(`用户 ${u.creatorName} 返回了 ${memosData.length} 条 memo`);
 
       memosData.forEach(item => {
         if (matchedV1 && item.createTime) {
           item.createdTs = Math.floor(new Date(item.createTime).getTime() / 1000);
         }
-        // 关键修复：使用当前用户 u 的信息
+        // 关键修复：使用当前用户 u 的信息，避免覆盖核心属性
         for (let key in u) {
           if (u.hasOwnProperty(key) && key !== 'createdTs' && key !== 'id' && key !== 'content') {
             item[key] = u[key];
           }
         }
-        console.log(`Memo ${item.id} 被分配用户: ${u.creatorName}`);
       });
       return memosData
     }));
   }
   results = results.filter(i => i.status === 'fulfilled');
   memoData = results.flatMap(result => result.value);
-  
-  console.log("所有 memo 数据:", memoData);
 
   // 创建用户信息映射表 - 使用 link + creatorId 作为唯一键
   const userMap = {};
   memoList.forEach(user => {
     const key = `${user.link}-${user.creatorId}`;
     userMap[key] = user;
-    console.log(`用户映射: ${key} -> ${user.creatorName}`);
   });
-
-  console.log("用户映射表:", userMap);
 
   // 确保每个 memo 都有正确的用户信息
   memoData = memoData.map(memo => {
     if (!memo || !memo.creatorId || !memo.link) {
-      console.log("跳过无效 memo:", memo);
       return memo;
     }
     
@@ -816,11 +801,9 @@ async function getMemos(search) {
     const memoKey = `${memo.link}-${memo.creatorId}`;
     const correctUser = userMap[memoKey];
     
-    console.log(`处理 memo ${memo.id}: key=${memoKey}, 找到用户:`, correctUser);
-    
     if (correctUser) {
       // 合并用户信息，但保留 memo 的原始内容
-      const result = {
+      return {
         ...correctUser,
         id: memo.id,
         content: memo.content,
@@ -831,15 +814,10 @@ async function getMemos(search) {
         resourceList: memo.resourceList,
         visibility: memo.visibility
       };
-      console.log(`Memo ${memo.id} 最终用户信息:`, result.creatorName, result.avatar);
-      return result;
     }
     
-    console.log(`Memo ${memo.id} 未找到匹配用户`);
     return memo;
   });
-
-  console.log("最终 memo 数据:", memoData);
 
   //memoData = await getMemoCount(memoData);
   memoDom.innerHTML = "";
