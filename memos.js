@@ -770,17 +770,44 @@ async function getMemos(search) {
         if (matchedV1 && item.createTime) {
           item.createdTs = Math.floor(new Date(item.createTime).getTime() / 1000);
         }
-        for (let key in matchedMemo) {
-          if (matchedMemo.hasOwnProperty(key)) {
-            item[key] = matchedMemo[key];
-          }
-        }
+        // 移除原有的用户信息赋值，改为在后续统一处理
+        // for (let key in matchedMemo) {
+        //   if (matchedMemo.hasOwnProperty(key)) {
+        //     item[key] = matchedMemo[key];
+        //   }
+        // }
       });
       return memosData
     }));
   }
   results = results.filter(i => i.status === 'fulfilled');
   memoData = results.flatMap(result => result.value);
+
+  // 修复：统一处理用户信息映射
+  memoList.forEach(item => {
+    let userLink = item.link;
+    if (!userLink.endsWith('/')) {
+      userLink += '/';
+    }
+    const key = `${userLink}-${item.creatorId}`;
+    memoCreatorMap[key] = item;
+  });
+
+  memoData = memoData.map(item => {
+    let itemLink = item.link;
+    if (!itemLink.endsWith('/')) {
+      itemLink += '/';
+    }
+    const key = `${itemLink}-${item.creatorId}`;
+    let userData = memoCreatorMap[key];
+    
+    // 如果找不到，尝试用 creatorName 作为备选方案
+    if (!userData) {
+      userData = memoList.find(user => user.creatorName === item.creatorName);
+    }
+    
+    return {...item, ...userData};
+  });
 
   //memoData = await getMemoCount(memoData);
   memoDom.innerHTML = "";
@@ -1246,21 +1273,21 @@ async function getUserMemos(link,id,name,avatar,tag,search,mode,random) {
 			  
 			  // 修复：使用 link + creatorId 作为唯一键来映射用户信息
 			  memoList.forEach(item => {
-			    let link = item.link;
-			    if (!link.endsWith('/')) {
-			      link += '/';
+			    let userLink = item.link;
+			    if (!userLink.endsWith('/')) {
+			      userLink += '/';
 			    }
-			    const key = `${link}-${item.creatorId}`;
+			    const key = `${userLink}-${item.creatorId}`;
 			    memoCreatorMap[key] = item;
 			  });
 			  
 			  memoData = memoData.map(item => {
 			    // 修复：使用对应的 link 和 creatorId 来查找用户信息
-			    let link = u.link;
-			    if (!link.endsWith('/')) {
-			      link += '/';
+			    let itemLink = link; // 这里使用 link，因为这是 getUserMemos 函数的参数
+			    if (!itemLink.endsWith('/')) {
+			      itemLink += '/';
 			    }
-			    const key = `${link}-${item.creatorId}`;
+			    const key = `${itemLink}-${item.creatorId}`;
 			    let userData = memoCreatorMap[key];
 			    
 			    // 如果找不到，尝试用 creatorName 作为备选方案
