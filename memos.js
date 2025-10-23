@@ -770,7 +770,6 @@ async function getMemos(search) {
         if (matchedV1 && item.createTime) {
           item.createdTs = Math.floor(new Date(item.createTime).getTime() / 1000);
         }
-        // 恢复原有的用户信息赋值
         for (let key in matchedMemo) {
           if (matchedMemo.hasOwnProperty(key)) {
             item[key] = matchedMemo[key];
@@ -783,22 +782,25 @@ async function getMemos(search) {
   results = results.filter(i => i.status === 'fulfilled');
   memoData = results.flatMap(result => result.value);
 
-  // 安全的用户信息映射 - 不使用 endsWith
+  // 修复：使用更安全的用户信息映射方法
   memoList.forEach(item => {
     memoCreatorMap[item.creatorName] = item;
   });
 
-  // 只对缺少用户信息的 memo 进行映射
+  // 修复：只对缺少用户信息的 memo 进行映射，并添加安全检查
   memoData = memoData.map(item => {
     // 如果 item 已经有完整的用户信息，直接返回
-    if (item.avatar && item.website && item.creatorName) {
+    if (item && item.avatar && item.website && item.creatorName) {
       return item;
     }
     
     // 否则尝试从映射中获取用户信息
-    let userData = memoCreatorMap[item.creatorName];
-    if (userData) {
-      return {...item, ...userData};
+    if (item && item.creatorName) {
+      let userData = memoCreatorMap[item.creatorName];
+      if (userData) {
+        // 创建一个新对象，确保不会覆盖现有属性
+        return {...userData, ...item};
+      }
     }
     
     return item;
