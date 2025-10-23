@@ -770,7 +770,8 @@ async function getMemos(search) {
         if (matchedV1 && item.createTime) {
           item.createdTs = Math.floor(new Date(item.createTime).getTime() / 1000);
         }
-        // 使用当前用户 u 的信息，而不是 matchedMemo
+        // 关键修复：使用当前用户 u 的信息，而不是 matchedMemo
+        // 这确保每个用户的数据都使用自己的信息
         for (let key in u) {
           if (u.hasOwnProperty(key)) {
             item[key] = u[key];
