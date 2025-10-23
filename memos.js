@@ -770,9 +770,10 @@ async function getMemos(search) {
         if (matchedV1 && item.createTime) {
           item.createdTs = Math.floor(new Date(item.createTime).getTime() / 1000);
         }
-        for (let key in matchedMemo) {
-          if (matchedMemo.hasOwnProperty(key)) {
-            item[key] = matchedMemo[key];
+        // 使用当前用户 u 的信息，而不是 matchedMemo
+        for (let key in u) {
+          if (u.hasOwnProperty(key)) {
+            item[key] = u[key];
           }
         }
       });
@@ -782,28 +783,39 @@ async function getMemos(search) {
   results = results.filter(i => i.status === 'fulfilled');
   memoData = results.flatMap(result => result.value);
 
-  // 修复：使用更安全的用户信息映射方法
-  memoList.forEach(item => {
-    memoCreatorMap[item.creatorName] = item;
+  // 创建用户信息映射表 - 使用 link + creatorId 作为唯一键
+  const userMap = {};
+  memoList.forEach(user => {
+    const key = `${user.link}-${user.creatorId}`;
+    userMap[key] = user;
   });
 
-  // 修复：只对缺少用户信息的 memo 进行映射，并添加安全检查
-  memoData = memoData.map(item => {
-    // 如果 item 已经有完整的用户信息，直接返回
-    if (item && item.avatar && item.website && item.creatorName) {
-      return item;
+  // 确保每个 memo 都有正确的用户信息
+  memoData = memoData.map(memo => {
+    if (!memo || !memo.creatorId || !memo.link) {
+      return memo;
     }
     
-    // 否则尝试从映射中获取用户信息
-    if (item && item.creatorName) {
-      let userData = memoCreatorMap[item.creatorName];
-      if (userData) {
-        // 创建一个新对象，确保不会覆盖现有属性
-        return {...userData, ...item};
-      }
+    // 尝试找到正确的用户信息
+    const memoKey = `${memo.link}-${memo.creatorId}`;
+    const correctUser = userMap[memoKey];
+    
+    if (correctUser) {
+      // 合并用户信息，但保留 memo 的原始内容
+      return {
+        ...correctUser,
+        id: memo.id,
+        content: memo.content,
+        createdTs: memo.createdTs,
+        creatorId: memo.creatorId,
+        creatorName: memo.creatorName,
+        link: memo.link,
+        resourceList: memo.resourceList,
+        visibility: memo.visibility
+      };
     }
     
-    return item;
+    return memo;
   });
 
   //memoData = await getMemoCount(memoData);
