@@ -1241,16 +1241,36 @@ async function getUserMemos(link,id,name,avatar,tag,search,mode,random) {
               let createdTs = Math.floor(cTime.getTime() / 1000);
               return {...item, creatorName,avatar,createdTs,creatorId,link,website};
             });
-          }else{
-            memoData = data.flatMap(result => result);
-            memoList.forEach(item => {
-              memoCreatorMap[item.creatorName] = item;
-            });
-            memoData = memoData.map(item => {
-              let data = memoCreatorMap[item.creatorName];
-              return {...item, ...data};
-            });
-          }
+          } else {
+			  memoData = data.flatMap(result => result);
+			  
+			  // 修复：使用 link + creatorId 作为唯一键来映射用户信息
+			  memoList.forEach(item => {
+			    let link = item.link;
+			    if (!link.endsWith('/')) {
+			      link += '/';
+			    }
+			    const key = `${link}-${item.creatorId}`;
+			    memoCreatorMap[key] = item;
+			  });
+			  
+			  memoData = memoData.map(item => {
+			    // 修复：使用对应的 link 和 creatorId 来查找用户信息
+			    let link = u.link;
+			    if (!link.endsWith('/')) {
+			      link += '/';
+			    }
+			    const key = `${link}-${item.creatorId}`;
+			    let userData = memoCreatorMap[key];
+			    
+			    // 如果找不到，尝试用 creatorName 作为备选方案
+			    if (!userData) {
+			      userData = memoList.find(user => user.creatorName === item.creatorName);
+			    }
+			    
+			    return {...item, ...userData};
+			  });
+			}
           memoData = await this.getMemoCount(memoData);
           memoDom.innerHTML = "";
           this.updateData(memoData);
