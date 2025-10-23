@@ -1276,36 +1276,16 @@ async function getUserMemos(link,id,name,avatar,tag,search,mode,random) {
               let createdTs = Math.floor(cTime.getTime() / 1000);
               return {...item, creatorName,avatar,createdTs,creatorId,link,website};
             });
-          } else {
-			  memoData = data.flatMap(result => result);
-			  
-			  // 修复：使用 link + creatorId 作为唯一键来映射用户信息
-			  memoList.forEach(item => {
-			    let userLink = item.link;
-			    if (!userLink.endsWith('/')) {
-			      userLink += '/';
-			    }
-			    const key = `${userLink}-${item.creatorId}`;
-			    memoCreatorMap[key] = item;
-			  });
-			  
-			  memoData = memoData.map(item => {
-			    // 修复：使用对应的 link 和 creatorId 来查找用户信息
-			    let itemLink = link; // 这里使用 link，因为这是 getUserMemos 函数的参数
-			    if (!itemLink.endsWith('/')) {
-			      itemLink += '/';
-			    }
-			    const key = `${itemLink}-${item.creatorId}`;
-			    let userData = memoCreatorMap[key];
-			    
-			    // 如果找不到，尝试用 creatorName 作为备选方案
-			    if (!userData) {
-			      userData = memoList.find(user => user.creatorName === item.creatorName);
-			    }
-			    
-			    return {...item, ...userData};
-			  });
-			}
+          }else{
+            memoData = data.flatMap(result => result);
+            memoList.forEach(item => {
+              memoCreatorMap[item.creatorName] = item;
+            });
+            memoData = memoData.map(item => {
+              let data = memoCreatorMap[item.creatorName];
+              return {...item, ...data};
+            });
+          }
           memoData = await this.getMemoCount(memoData);
           memoDom.innerHTML = "";
           this.updateData(memoData);
