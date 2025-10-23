@@ -783,66 +783,21 @@ async function getMemos(search) {
   results = results.filter(i => i.status === 'fulfilled');
   memoData = results.flatMap(result => result.value);
 
-  // 修复：统一处理用户信息映射，添加更严格的安全检查
+  // 简化处理：直接使用原有的用户信息映射方式
   memoList.forEach(item => {
-    let userLink = item.link;
-    if (userLink && !userLink.endsWith('/')) {
-      userLink += '/';
-    }
-    const key = `${userLink}-${item.creatorId}`;
-    memoCreatorMap[key] = item;
+    memoCreatorMap[item.creatorName] = item;
   });
 
-  // 过滤掉无效的 memo 数据
-  memoData = memoData.filter(item => item && item.creatorId);
-  
   memoData = memoData.map(item => {
-    // 确保 item 存在且有 creatorId
-    if (!item || !item.creatorId) {
-      return item;
-    }
-    
-    let itemLink = item.link;
-    
-    // 如果 item.link 不存在，尝试从匹配的用户信息中获取
-    if (!itemLink) {
-      // 首先尝试通过 creatorId 匹配
-      let userData = memoList.find(user => user.creatorId === item.creatorId);
+    // 如果 item 没有用户信息，尝试从 memoCreatorMap 中获取
+    if (!item.avatar || !item.website) {
+      let userData = memoCreatorMap[item.creatorName];
       if (userData) {
-        itemLink = userData.link;
-      } else {
-        // 如果还是找不到，尝试通过 creatorName 匹配
-        userData = memoList.find(user => user.creatorName === item.creatorName);
-        if (userData) {
-          itemLink = userData.link;
-        }
+        return {...item, ...userData};
       }
     }
-    
-    // 如果仍然没有 link，跳过这个 item
-    if (!itemLink) {
-      console.warn('无法找到 memo 的链接:', item);
-      return item;
-    }
-    
-    // 确保 itemLink 是字符串且有值
-    if (typeof itemLink === 'string' && itemLink && !itemLink.endsWith('/')) {
-      itemLink += '/';
-    }
-    
-    const key = `${itemLink}-${item.creatorId}`;
-    let userData = memoCreatorMap[key];
-    
-    // 如果找不到，尝试用 creatorName 作为备选方案
-    if (!userData) {
-      userData = memoList.find(user => user.creatorName === item.creatorName);
-    }
-    
-    return {...item, ...userData};
+    return item;
   });
-
-  // 再次过滤掉无效的数据
-  memoData = memoData.filter(item => item && item.creatorId && item.link);
 
   //memoData = await getMemoCount(memoData);
   memoDom.innerHTML = "";
